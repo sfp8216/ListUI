@@ -2,9 +2,14 @@ package com.rit.sfp.ListUI;
 
 import android.os.Bundle;
 import android.app.FragmentTransaction;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.app.Activity;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 
 public class MainActivity extends Activity {
@@ -54,13 +59,15 @@ public class MainActivity extends Activity {
         }
     }
 
+
     //listener for list fragment
     private MyListFragment.ItemChangedListener itemChangedListener =
             new MyListFragment.ItemChangedListener() {
                 @Override
-                public void onSelectedItemChanged(String itemNameString) {
+                public void onSelectedItemChanged(String name, Map<String,ArrayList<String>> statesMap) {
                     //create and show the fragment
-                    DetailFragment details = DetailFragment.newInstance(itemNameString);
+
+                    DetailFragment details = DetailFragment.newInstance(name, statesMap);
                     FragmentTransaction ft = getFragmentManager().beginTransaction();
                     ft.setCustomAnimations(R.animator.fragment_animation_fade_in,
                             R.animator.fragment_animation_fade_out);

@@ -21,51 +21,61 @@ import org.xmlpull.v1.XmlPullParserException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by Sfp on 9/20/2016.
  */
-    public class MyListFragment extends ListFragment {
+public class MyListFragment extends ListFragment {
 
-        public ArrayList<String> itemsArrayList; //list of items
-        private ArrayAdapter<String> itemsArrayAdapter;
-        private ItemChangedListener itemChangedListener;
+    public ArrayList<String> itemsArrayList; //list of items
+    public HashMap<String,ArrayList<String>> statesInfoList;
+    private ArrayAdapter<String> itemsArrayAdapter;
+    private ItemChangedListener itemChangedListener;
 
-        //interface describing listener for changes to selected item
-        public interface ItemChangedListener {
-            //the selected item is changed
-            public void onSelectedItemChanged(String itemNameString);
-        }
+    //interface describing listener for changes to selected item
+    public interface ItemChangedListener {
+        //the selected item is changed
+        public void onSelectedItemChanged(String name, Map<String,ArrayList<String>> stateMap);
+    }
 
-        //set the ItemChangedListener
-        public void setItemChangedListener(ItemChangedListener listener) {
-            itemChangedListener = listener;
-        }
+    //set the ItemChangedListener
+    public void setItemChangedListener(ItemChangedListener listener) {
+        itemChangedListener = listener;
+    }
 
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
         XmlResourceParser xrp = getResources().getXml(R.xml.states);
         itemsArrayList = new ArrayList<String>();
-try {
-    xrp.next();
-    int eventType = xrp.getEventType();
-    while (eventType != XmlPullParser.END_DOCUMENT) {
-        if (eventType == XmlPullParser.START_TAG
-                && xrp.getName().equalsIgnoreCase("state")) {
-            String attrValue = xrp.getAttributeValue(null,
-                    "name");
-            itemsArrayList.add(attrValue);
-            int intValue = xrp.getAttributeIntValue(null, "order", 0);
+        statesInfoList = new HashMap<>();
+        ArrayList<String> infoList = new ArrayList<>();
+        try {
+            xrp.next();
+            int eventType = xrp.getEventType();
+            while (eventType != XmlPullParser.END_DOCUMENT) {
+                if (eventType == XmlPullParser.START_TAG
+                        && xrp.getName().equalsIgnoreCase("state")) {
+                    String stateName = xrp.getAttributeValue(null,
+                            "name");
+                    String statePopulation = xrp.getAttributeValue(null,"population");
+                    String stateCapital = xrp.getAttributeValue(null,"capital");
+                    infoList.add(stateCapital);
+                    infoList.add(statePopulation);
+                    statesInfoList.put(stateName,infoList);
+                    itemsArrayList.add(stateName);
+                    int intValue = xrp.getAttributeIntValue(null, "order", 0);
+                }
+                eventType = xrp.next();
+            }
+        } catch (IOException e) {
+            Log.d("TAG", "IO Exception");
+        } catch (XmlPullParserException e) {
+            Log.d("TAG", "XmlException");
         }
-        eventType = xrp.next();
-    }
-}catch(IOException e){
-    Log.d("TAG", "IO Exception");
-}catch(XmlPullParserException e){
-    Log.d("TAG","XmlException");
-}
         setListAdapter(new ItemsArrayAdapter<String>(
                 getActivity(),
                 R.layout.list_item,
@@ -93,34 +103,34 @@ try {
         //public constructor
         public ItemsArrayAdapter(Context context, int textViewResourceId,
                                  List<String> objects) {
-            super(context,-1,objects); //-1 indicates we're customizing view
+            super(context, -1, objects); //-1 indicates we're customizing view
             this.context = context;
             this.items = objects;
             inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         }
 
 
-    //get ListView item for the given position
-    @Override
-    public View getView(int position, View convertView, ViewGroup parent) {
-        ViewHolder viewHolder; //holds reference to current item's GUI
-        //if convertView is null, inflate GUI and create ViewHolder otherwise, get an existing ViewHolder
-        if(convertView == null) {
-            convertView = inflater.inflate(R.layout.list_item,null);
-            //set up ViewHOlder for this item
-            viewHolder = new ViewHolder();
-            viewHolder.itemTextView = (TextView)convertView.findViewById(R.id.text1);
-            convertView.setTag(viewHolder);
-        } else {
-            //get the ViewHolder from the convertView's tag
-            viewHolder = (ViewHolder)convertView.getTag();
-        }
-        String item = items.get(position); //get current item
-        viewHolder.itemTextView.setText(item);
+        //get ListView item for the given position
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent) {
+            ViewHolder viewHolder; //holds reference to current item's GUI
+            //if convertView is null, inflate GUI and create ViewHolder otherwise, get an existing ViewHolder
+            if (convertView == null) {
+                convertView = inflater.inflate(R.layout.list_item, null);
+                //set up ViewHOlder for this item
+                viewHolder = new ViewHolder();
+                viewHolder.itemTextView = (TextView) convertView.findViewById(R.id.text1);
+                convertView.setTag(viewHolder);
+            } else {
+                //get the ViewHolder from the convertView's tag
+                viewHolder = (ViewHolder) convertView.getTag();
+            }
+            String item = items.get(position); //get current item
+            viewHolder.itemTextView.setText(item);
 
-        return convertView;
-    } //getView
-}//arrayadapter
+            return convertView;
+        } //getView
+    }//arrayadapter
 
     private AdapterView.OnItemClickListener itemsOnItemClickListener =
             new AdapterView.OnItemClickListener() {
@@ -129,9 +139,8 @@ try {
                                         View view,
                                         int position,
                                         long id) {
-                    itemChangedListener.onSelectedItemChanged(
-                            ((TextView)view).getText().toString()
-                    );
+                    itemChangedListener.onSelectedItemChanged(((TextView)view).getText().toString(),
+                            statesInfoList);
                 }
             };
 
